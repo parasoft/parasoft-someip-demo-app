@@ -1,5 +1,8 @@
 # Parasoft SOME/IP demo app
 
+## Requirements
+- Java 17+
+
 ## How to build and run project
 
 ```shell
