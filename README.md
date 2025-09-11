@@ -12,7 +12,7 @@ The Parasoft SOME/IP Demo Application is used to demonstrate the speed from simu
 
 ### Running
 ```shell
-  java -jar target/soavirt-someip-demo-***.jar  --server.port=9998
+  java -jar target/parasoft-someip-demo-app-***.jar  --server.port=9998
 ```
 You can visit the application at [http://localhost:9998](http://localhost:9998).
 
@@ -20,12 +20,12 @@ You can visit the application at [http://localhost:9998](http://localhost:9998).
 
 ### Build a Docker Image from Sources
 ```shell
-  docker build -t parasoft-demo-app:latest .
+  docker build -t parasoft-someip-demo-app:latest .
 ```
 
 ### Run Docker Image
 ```shell
-  docker run -d -p 9998:9998 -p 61616:61616 --name parasoft-demo-app parasoft-demo-app:latest
+  docker run -d -p 9998:9998 -p 61616:61616 --name parasoft-someip-demo-app parasoft-someip-demo-app:latest
 ```
 You can visit the application at [http://localhost:9998](http://localhost:9998).
 
