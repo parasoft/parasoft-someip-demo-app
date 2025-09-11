@@ -67,25 +67,22 @@
         <div></div>
         <div id="radar" class="node">Radar</div>
 
-        <div id="accMethod" class="node callout">Max speed: 0</div>
+        <div id="accMethod" class="node callout">Max speed: <span id="accMaxSpeed">N/A</span></div>
         <div></div>
-        <div id="radarEvent" class="node callout">Distance: 0<br/>Relative speed: 0</div>
+        <div id="radarEvent" class="node callout">Distance: <span id="radarDistance">N/A</span><br/>Relative speed: <span id="radarRelativeSpeed">N/A</span></div>
 
         <div></div>
         <div id="center" class="node center">Path Planning and Decision Making</div>
         <div></div>
 
-        <div id="jsonMethod" class="node callout">Speed limit: 0</div>
+        <div id="jsonMethod" class="node callout">Speed limit: <span id="googleSpeedLimit">N/A</span></div>
         <div></div>
-        <div id="someipMethod" class="node callout">Speed limit: 0</div>
+        <div id="someipMethod" class="node callout">Speed limit: <span id="tsrSpeedLimit">N/A</span></div>
 
         <div id="google" class="node">Google Map</div>
         <div></div>
         <div id="tsr" class="node">Traffic Sign Recognition</div>
     </section>
-
-    <!-- TODO: Temporary UI for showing websocket message, this will be removed in SVA-656 -->
-    <div id="temporary" style="text-align: center; margin-top: 50px">Received web socket message: <span id="receivedMessages">none</span></div>
 </div>
 
 <script th:src="@{/js/sockjs.min.js}"></script>
@@ -155,6 +152,42 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleDraw);
     scheduleDraw();
 
+    const ecuMessageHandlers = {
+        ACC: (response) => {
+            const value = getValue(response, 'maxSpeed');
+            document.getElementById('accMaxSpeed').textContent = value;
+        },
+
+        RADAR: (response) => {
+            const distance = getValue(response, 'distance');
+            const relativeSpeed = getValue(response, 'relativeSpeed');
+
+            document.getElementById('radarDistance').textContent = distance;
+            document.getElementById('radarRelativeSpeed').textContent = relativeSpeed;
+        },
+
+        GOOGLEMAP: (response) => {
+            document.getElementById('googleSpeedLimit').textContent = getValue(response, 'speedLimit');
+        },
+
+        TSR: (response) => {
+            const value = getValue(response, 'speedLimit');
+            document.getElementById('tsrSpeedLimit').textContent = value;
+        }
+    };
+
+    function getValue(response, key) {
+        var value = "N/A";
+        if (response['errorMessage']) {
+            console.error(`${response['ecuName']} Error: ${response['errorMessage']}`);
+        } else if (response[key]) {
+            value = response[key];
+        } else {
+            console.error(`Key '${key}' missing in response from ${response['ecuName']}: `, response);
+        }
+        return value;
+    }
+
     // Web socket configuration
     function connectWebSocket() {
         const socket = new SockJS("/ws");
@@ -162,8 +195,27 @@
 
         stompClient.connect({}, function() {
             stompClient.subscribe('/topic/someip_messages', function(message) {
-                const receivedMessages = document.getElementById('receivedMessages');
-                receivedMessages.textContent = message.body;
+                try {
+                    const response = JSON.parse(message.body);
+                    var ecuName = response['ecuName'];
+                    if (ecuName) {
+                        ecuName = ecuName.toUpperCase();
+                    } else {
+                        console.error("ECU name missing in message: ", message);
+                        return;
+                    }
+                    const messageHandler = ecuMessageHandlers[ecuName];
+
+                    if (!messageHandler) {
+                        console.error("No message handler for ECU: ", response['ecuName']);
+                        return;
+                    }
+
+                    messageHandler(response);
+                } catch (error) {
+                    console.error("Failed to process ECU message: ", message);
+                    console.error(error);
+                }
             });
         });
 
