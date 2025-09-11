@@ -1,26 +1,38 @@
-# Parasoft SOME/IP demo app
+# Parasoft SOME/IP Demo Application
+The Parasoft SOME/IP Demo Application is used to demonstrate the speed from simulated ACC, TSR, Radar and Google Map ECUs.
 
 ## Requirements
 - Java 17+
 
-## How to build and run project
-
+## Getting Started
+### Build .jar from sources
 ```shell
   mvn clean package
-  java -jar target/soavirt-someip-demo-***.jar
 ```
 
-## How to build and run docker image
+### Running
+```shell
+  java -jar target/soavirt-someip-demo-***.jar  --server.port=9998
+```
+You can visit the application at [http://localhost:9998](http://localhost:9998).
 
+## Docker Image
+
+### Build a Docker Image from Sources
 ```shell
   docker build -t parasoft-demo-app:latest .
+```
+
+### Run Docker Image
+```shell
   docker run -d -p 9998:9998 -p 61616:61616 --name parasoft-demo-app parasoft-demo-app:latest
 ```
+You can visit the application at [http://localhost:9998](http://localhost:9998).
 
 ## Default settings
 
-| Property          | Default Value         |
-|-------------------|-----------------------|
-| Application Url   | http://localhost:9998 |
-| Message Queue Url | tcp://0.0.0.0:61616   |
-| Queue name        | someip_message_queue  |
+| Property                     | Default Value        | Property                   |
+|------------------------------|----------------------|----------------------------|
+| Application Port             | 9998                 | server.port                |
+| Embedded ActiveMQ Server Url | tcp://0.0.0.0:61616  | spring.activemq.broker-url |
+| ActiveMQ Queue Name          | someip_message_queue | N.A.                       |
