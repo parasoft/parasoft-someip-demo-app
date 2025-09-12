@@ -9,10 +9,10 @@
         <relativePath/>
     </parent>
     <groupId>com.parasoft</groupId>
-    <artifactId>demo-soavirt-someip</artifactId>
+    <artifactId>parasoft-someip-demo-app</artifactId>
     <version>1.0.0</version>
-    <name>demo-soavirt-someip</name>
-    <description>demo-soavirt-someip</description>
+    <name>parasoft-someip-demo-app</name>
+    <description>parasoft-someip-demo-app</description>
 
     <properties>
         <java.version>17</java.version>
