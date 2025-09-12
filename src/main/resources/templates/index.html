@@ -180,7 +180,7 @@
         var value = "N/A";
         if (response['errorMessage']) {
             console.error(`${response['ecuName']} Error: ${response['errorMessage']}`);
-        } else if (response[key]) {
+        } else if (response[key] === 0 || response[key]) {
             value = response[key];
         } else {
             console.error(`Key '${key}' missing in response from ${response['ecuName']}: `, response);
