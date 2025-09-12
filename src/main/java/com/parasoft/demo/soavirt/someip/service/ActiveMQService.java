@@ -78,8 +78,8 @@ public class ActiveMQService {
             String errorMessage = "Invalid payload: " + payload;
             return objectMapper.writeValueAsString(new Records.RadarMessage(ecuName, messageType, null, null, errorMessage));
         }
-        distance = Bytes.parseHex(payload.substring(0, 8)).toInt();
-        relativeSpeed = Bytes.parseHex(payload.substring(8, 16)).toInt();
+        relativeSpeed = Bytes.parseHex(payload.substring(0, 8)).toInt();
+        distance = Bytes.parseHex(payload.substring(8, 16)).toInt();
 
         return objectMapper.writeValueAsString(new Records.RadarMessage(ecuName, messageType, distance, relativeSpeed, null));
     }
