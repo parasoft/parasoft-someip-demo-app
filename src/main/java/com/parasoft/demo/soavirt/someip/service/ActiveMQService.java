@@ -28,25 +28,32 @@ public class ActiveMQService {
     public void handleMessage(String message) {
         log.info("Received message: {}", message);
         try {
-            simpMessagingTemplate.convertAndSend("/topic/someip_messages", processSomeipMessage(message));
+            simpMessagingTemplate.convertAndSend("/topic/someip_messages", processMessage(message));
         } catch (Exception e){
             log.error(e.getMessage(), e);
         }
     }
 
-    public String processSomeipMessage(String message) throws JsonProcessingException {
+    public String processMessage(String message) throws JsonProcessingException {
         Records.ActiveMQMessage activeMQMessage = objectMapper.readValue(message, Records.ActiveMQMessage.class);
+        boolean isStatusMessage = activeMQMessage.type().isStatusType();
 
         return switch (activeMQMessage.ecuName().toUpperCase()) {
             case "GOOGLEMAP" -> message;
-            case "ACC" -> deSerializeMessageFromPPDM(activeMQMessage);
-            case "RADAR"-> deSerializeMessageFromRadar(activeMQMessage);
-            case "TSR" -> deSerializeMessageFromTSR(activeMQMessage);
+            case "ACC" -> isStatusMessage ? prepareStatusMessage(activeMQMessage) : deserializeSomeipMessageFromPPDM(activeMQMessage);
+            case "RADAR"-> isStatusMessage ? prepareStatusMessage(activeMQMessage) : deSerializeMessageFromRadar(activeMQMessage);
+            case "TSR" -> isStatusMessage ? prepareStatusMessage(activeMQMessage) : deSerializeMessageFromTSR(activeMQMessage);
             default -> throw new RuntimeException("Unknown ecu name: " + activeMQMessage.ecuName());
         };
     }
 
-    private String deSerializeMessageFromPPDM(Records.ActiveMQMessage activeMQMessage) throws JsonProcessingException {
+    private String prepareStatusMessage(Records.ActiveMQMessage activeMQMessage) throws JsonProcessingException {
+        String ecuName = activeMQMessage.ecuName();
+        MessageType messageType = activeMQMessage.type();
+        return objectMapper.writeValueAsString(new Records.StatusMessage(ecuName, messageType));
+    }
+
+    private String deserializeSomeipMessageFromPPDM(Records.ActiveMQMessage activeMQMessage) throws JsonProcessingException {
         String ecuName = activeMQMessage.ecuName();
         MessageType messageType = activeMQMessage.type();
 
