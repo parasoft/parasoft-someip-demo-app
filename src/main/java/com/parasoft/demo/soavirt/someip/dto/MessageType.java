@@ -6,7 +6,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum MessageType {
     RECEIVED_RESPONSE("received_response"),
     EVENT_NOTIFY("event_notify"),
-    REPLIED_RESPONSE("replied_response");
+    REPLIED_RESPONSE("replied_response"),
+    STATUS_STARTUP("status_startup"),
+    STATUS_SHUTDOWN("status_shutdown");
 
     private final String messageType;
 
@@ -27,5 +29,9 @@ public enum MessageType {
             }
         }
         throw new IllegalArgumentException("Unknown messageType: " + value);
+    }
+
+    public boolean isStatusType() {
+        return this == STATUS_STARTUP || this == STATUS_SHUTDOWN;
     }
 }

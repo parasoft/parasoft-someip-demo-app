@@ -32,6 +32,15 @@
         .center { grid-column: 2; background: #efeaff; border-color: #b7a7ff; margin-bottom: 60px; margin-top: 60px; }
         .callout { background: var(--callout-bg); border-color: var(--callout-border); font-weight: 500; color: #3a3a3a; border-radius: 0; }
 
+
+        .shutdown {
+            color: #b9b9b9;
+        }
+
+        .ecu.shutdown {
+            border: 2px solid #d1d1d1;
+        }
+
         /* SVG connectors */
         .wires { position: absolute; inset: 0; pointer-events: none; }
         .wires line { stroke: var(--line); stroke-width: 1.5; marker-end: url(#arrowhead); }
@@ -63,25 +72,25 @@
     </svg>
 
     <section class="grid">
-        <div id="acc" class="node">Adaptive Cruise Control</div>
+        <div id="acc" class="node ecu acc shutdown">Adaptive Cruise Control</div>
         <div></div>
-        <div id="radar" class="node">Radar</div>
+        <div id="radar" class="node ecu radar shutdown">Radar</div>
 
-        <div id="accMethod" class="node callout">Max speed: <span id="accMaxSpeed">N/A</span></div>
+        <div id="accMethod" class="node callout acc shutdown">Max speed: <span id="accMaxSpeed" class="value">N/A</span></div>
         <div></div>
-        <div id="radarEvent" class="node callout">Distance: <span id="radarDistance">N/A</span><br/>Relative speed: <span id="radarRelativeSpeed">N/A</span></div>
+        <div id="radarEvent" class="node callout radar shutdown">Distance: <span id="radarDistance" class="value">N/A</span><br/>Relative speed: <span id="radarRelativeSpeed" class="value">N/A</span></div>
 
         <div></div>
-        <div id="center" class="node center">Path Planning and Decision Making</div>
+        <div id="center" class="node ecu center">Path Planning and Decision Making</div>
         <div></div>
 
-        <div id="jsonMethod" class="node callout">Speed limit: <span id="googleSpeedLimit">N/A</span></div>
+        <div id="jsonMethod" class="node callout google">Speed limit: <span id="googleSpeedLimit">N/A</span></div>
         <div></div>
-        <div id="someipMethod" class="node callout">Speed limit: <span id="tsrSpeedLimit">N/A</span></div>
+        <div id="someipMethod" class="node callout tsr shutdown">Speed limit: <span id="tsrSpeedLimit" class="value">N/A</span></div>
 
-        <div id="google" class="node">Google Map</div>
+        <div id="google" class="node ecu google">Google Map</div>
         <div></div>
-        <div id="tsr" class="node">Traffic Sign Recognition</div>
+        <div id="tsr" class="node ecu tsr shutdown">Traffic Sign Recognition</div>
     </section>
 </div>
 
@@ -204,13 +213,33 @@
                         console.error("ECU name missing in message: ", message);
                         return;
                     }
+
+                    const type = response['type'];
+                    const elements = document.getElementsByClassName(ecuName.toLowerCase());
+                    for (let element of elements) {
+                        element.classList.remove('shutdown');
+                    }
+                    if (type === 'status_startup') {
+                        return;
+                    }
+                    if (type === 'status_shutdown') {
+                        for (let element of elements) {
+                            element.classList.add('shutdown');
+
+                            const valueElements = element.querySelectorAll('.value');
+                            valueElements.forEach(value => {
+                                value.textContent = 'N/A';
+                            });
+                        }
+                        return;
+                    }
+
                     const messageHandler = ecuMessageHandlers[ecuName];
 
                     if (!messageHandler) {
                         console.error("No message handler for ECU: ", response['ecuName']);
                         return;
                     }
-
                     messageHandler(response);
                 } catch (error) {
                     console.error("Failed to process ECU message: ", message);
