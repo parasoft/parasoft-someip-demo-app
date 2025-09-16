@@ -29,21 +29,14 @@
         }
 
         .node { padding: 12px 16px; border: 2px solid var(--box-border); background: var(--box-bg); text-align: center; font-weight: 600; border-radius: 0; }
-        .center { grid-column: 2; background: #efeaff; border-color: #b7a7ff; margin-bottom: 60px; margin-top: 60px; }
+        .center { grid-column: 2; background: #b7a7ff; border-color: #b7a7ff; margin-bottom: 60px; margin-top: 60px; }
         .callout { background: var(--callout-bg); border-color: var(--callout-border); font-weight: 500; color: #3a3a3a; border-radius: 0; }
-
-
-        .shutdown {
-            color: #b9b9b9;
-        }
-
-        .ecu.shutdown {
-            border: 2px solid #d1d1d1;
-        }
+        .ecu.startup { background: #b7a7ff; border-color: #b7a7ff; }
 
         /* SVG connectors */
         .wires { position: absolute; inset: 0; pointer-events: none; }
-        .wires line { stroke: var(--line); stroke-width: 1.5; marker-end: url(#arrowhead); }
+        .wires line { stroke: var(--line); stroke-width: 1.5; }
+        .wires .arrowLine { marker-end: url(#arrowhead); }
 
         @media (max-width: 720px) {
             .grid { grid-template-columns: 1fr; gap: 20px; }
@@ -72,13 +65,13 @@
     </svg>
 
     <section class="grid">
-        <div id="acc" class="node ecu acc shutdown">Adaptive Cruise Control</div>
+        <div id="acc" class="node ecu acc">Adaptive Cruise Control</div>
         <div></div>
-        <div id="radar" class="node ecu radar shutdown">Radar</div>
+        <div id="radar" class="node ecu radar">Radar</div>
 
-        <div id="accMethod" class="node callout acc shutdown">Max speed: <span id="accMaxSpeed" class="value">N/A</span></div>
+        <div id="accMethod" class="node callout acc">Max speed: <span id="accMaxSpeed" class="value">N/A</span></div>
         <div></div>
-        <div id="radarEvent" class="node callout radar shutdown">Distance: <span id="radarDistance" class="value">N/A</span><br/>Relative speed: <span id="radarRelativeSpeed" class="value">N/A</span></div>
+        <div id="radarEvent" class="node callout radar">Distance: <span id="radarDistance" class="value">N/A</span><br/>Relative speed: <span id="radarRelativeSpeed" class="value">N/A</span></div>
 
         <div></div>
         <div id="center" class="node ecu center">Path Planning and Decision Making</div>
@@ -86,11 +79,11 @@
 
         <div id="jsonMethod" class="node callout google">Speed limit: <span id="googleSpeedLimit">N/A</span></div>
         <div></div>
-        <div id="someipMethod" class="node callout tsr shutdown">Speed limit: <span id="tsrSpeedLimit" class="value">N/A</span></div>
+        <div id="someipMethod" class="node callout tsr">Speed limit: <span id="tsrSpeedLimit" class="value">N/A</span></div>
 
-        <div id="google" class="node ecu google">Google Map</div>
+        <div id="google" class="node ecu google startup">Google Map</div>
         <div></div>
-        <div id="tsr" class="node ecu tsr shutdown">Traffic Sign Recognition</div>
+        <div id="tsr" class="node ecu tsr">Traffic Sign Recognition</div>
     </section>
 </div>
 
@@ -98,43 +91,46 @@
 <script th:src="@{/js/stomp.min.js}"></script>
 <script>
     const pairs = [
-        ['acc', 'accMethod'],
-        ['accMethod', 'center'],
-        ['radar', 'radarEvent'],
+        // arrow line
+        ['center', 'accMethod'],
+        ['jsonMethod', 'center'],
+        ['someipMethod', 'center'],
         ['radarEvent', 'center'],
-        ['center', 'jsonMethod'],
-        ['jsonMethod', 'google'],
-        ['center', 'someipMethod'],
-        ['someipMethod', 'tsr']
+        // line
+        ['acc', 'accMethod'],
+        ['radar', 'radarEvent'],
+        ['google', 'jsonMethod'],
+        ['tsr', 'someipMethod']
     ];
 
     const stage = document.querySelector('.stage');
     const svg = document.querySelector('.wires');
 
-    function clearLines(){ svg.querySelectorAll('line').forEach(l => l.remove()); }
-    function center(rect){ return { x: rect.left + rect.width*0.5, y: rect.top + rect.height*0.5 }; }
-    function anchors(el1, el2){
+    function clearLines() { svg.querySelectorAll('line').forEach(l => l.remove()); }
+    function center(rect) { return { x: rect.left + rect.width*0.5, y: rect.top + rect.height*0.5 }; }
+    function anchors(el1, el2) {
         const r1 = el1.getBoundingClientRect();
         const r2 = el2.getBoundingClientRect();
 
-        let from = { x: r1.left + r1.width/2, y: r1.bottom };
-        let to   = { x: r2.left + r2.width/2, y: r2.top };
+        let from = { x: r1.left + r1.width / 2, y: r1.top };
+        let to = { x: r2.left + r2.width / 2, y: r2.bottom };
 
-        if (el1.getAttribute('id') === 'accMethod') {
-            to   = { x: r2.left + r2.width/3, y: r2.top };
-        } else if (el1.getAttribute('id') === 'radarEvent') {
-            to   = { x: r2.right - r2.width/3, y: r2.top };
-        } else if (el2.getAttribute('id') === 'jsonMethod') {
-            from = { x: r1.left + r1.width/3, y: r1.bottom };
-        } else if (el2.getAttribute('id') === 'someipMethod') {
-            from = { x: r1.right - r1.width/3, y: r1.bottom };
+        if (el1.id === 'center') {
+            from = { x: r1.left + r1.width / 3, y: r1.top };
+        } else if (el1.id === 'radarEvent') {
+            from = { x: r1.left + r1.width / 2, y: r1.bottom };
+            to = { x: r2.right - r2.width / 3, y: r2.top };
+        } else if (el1.id === 'someipMethod') {
+            to = { x: r2.right - r2.width / 3, y: r2.bottom };
+        } else if (el1.id === 'jsonMethod') {
+            to = { x: r2.left + r2.width / 3, y: r2.bottom };
         }
 
         return { from, to };
     }
-    function toLocal(p, rect){ return { x: p.x - rect.left, y: p.y - rect.top }; }
+    function toLocal(p, rect) { return { x: p.x - rect.left, y: p.y - rect.top }; }
 
-    function draw(){
+    function draw() {
         clearLines();
         const rect = stage.getBoundingClientRect();
         svg.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
@@ -148,6 +144,9 @@
             const p1 = toLocal(from, rect);
             const p2 = toLocal(to, rect);
             const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+            if (el1.id === 'center' || el2.id === 'center') {
+               line.classList.add('arrowLine');
+            }
             line.setAttribute('x1', p1.x);
             line.setAttribute('y1', p1.y);
             line.setAttribute('x2', p2.x);
@@ -156,7 +155,7 @@
         }
     }
 
-    const scheduleDraw = (()=>{ let raf; return ()=>{ cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }; })();
+    const scheduleDraw = (() => { let raf; return ()=>{ cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }; })();
     window.addEventListener('resize', scheduleDraw);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleDraw);
     scheduleDraw();
@@ -216,16 +215,15 @@
 
                     const type = response['type'];
                     const elements = document.getElementsByClassName(ecuName.toLowerCase());
-                    for (let element of elements) {
-                        element.classList.remove('shutdown');
-                    }
                     if (type === 'status_startup') {
+                        for (let element of elements) {
+                            element.classList.add('startup');
+                        }
                         return;
                     }
                     if (type === 'status_shutdown') {
                         for (let element of elements) {
-                            element.classList.add('shutdown');
-
+                            element.classList.remove('startup');
                             const valueElements = element.querySelectorAll('.value');
                             valueElements.forEach(value => {
                                 value.textContent = 'N/A';
