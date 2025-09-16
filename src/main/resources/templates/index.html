@@ -29,7 +29,7 @@
         }
 
         .node { padding: 12px 16px; border: 2px solid var(--box-border); background: var(--box-bg); text-align: center; font-weight: 600; border-radius: 0; }
-        .center { grid-column: 2; background: #b7a7ff; border-color: #b7a7ff; margin-bottom: 60px; margin-top: 60px; }
+        .ppdm { grid-column: 2; background: #b7a7ff; border-color: #b7a7ff; margin-bottom: 60px; margin-top: 60px; }
         .callout { background: var(--callout-bg); border-color: var(--callout-border); font-weight: 500; color: #3a3a3a; border-radius: 0; }
         .ecu.startup { background: #b7a7ff; border-color: #b7a7ff; }
 
@@ -44,7 +44,7 @@
             #accMethod { order: 2; }
             #radar { order: 3; }
             #radarEvent { order: 4; }
-            #center { order: 5; }
+            #ppdm { order: 5; }
             #jsonMethod { order: 6; }
             #google { order: 7; }
             #someipMethod { order: 8; }
@@ -74,14 +74,14 @@
         <div id="radarEvent" class="node callout radar">Distance: <span id="radarDistance" class="value">N/A</span><br/>Relative speed: <span id="radarRelativeSpeed" class="value">N/A</span></div>
 
         <div></div>
-        <div id="center" class="node ecu center">Path Planning and Decision Making</div>
+        <div id="ppdm" class="node ecu ppdm">Path Planning and Decision Making</div>
         <div></div>
 
-        <div id="jsonMethod" class="node callout google">Speed limit: <span id="googleSpeedLimit">N/A</span></div>
+        <div id="jsonMethod" class="node callout googlemap">Speed limit: <span id="googleSpeedLimit">N/A</span></div>
         <div></div>
         <div id="someipMethod" class="node callout tsr">Speed limit: <span id="tsrSpeedLimit" class="value">N/A</span></div>
 
-        <div id="google" class="node ecu google startup">Google Map</div>
+        <div id="google" class="node ecu googlemap startup">Google Map</div>
         <div></div>
         <div id="tsr" class="node ecu tsr">Traffic Sign Recognition</div>
     </section>
@@ -92,10 +92,10 @@
 <script>
     const pairs = [
         // arrow line
-        ['center', 'accMethod'],
-        ['jsonMethod', 'center'],
-        ['someipMethod', 'center'],
-        ['radarEvent', 'center'],
+        ['ppdm', 'accMethod'],
+        ['jsonMethod', 'ppdm'],
+        ['someipMethod', 'ppdm'],
+        ['radarEvent', 'ppdm'],
         // line
         ['acc', 'accMethod'],
         ['radar', 'radarEvent'],
@@ -107,7 +107,6 @@
     const svg = document.querySelector('.wires');
 
     function clearLines() { svg.querySelectorAll('line').forEach(l => l.remove()); }
-    function center(rect) { return { x: rect.left + rect.width*0.5, y: rect.top + rect.height*0.5 }; }
     function anchors(el1, el2) {
         const r1 = el1.getBoundingClientRect();
         const r2 = el2.getBoundingClientRect();
@@ -115,7 +114,7 @@
         let from = { x: r1.left + r1.width / 2, y: r1.top };
         let to = { x: r2.left + r2.width / 2, y: r2.bottom };
 
-        if (el1.id === 'center') {
+        if (el1.id === 'ppdm') {
             from = { x: r1.left + r1.width / 3, y: r1.top };
         } else if (el1.id === 'radarEvent') {
             from = { x: r1.left + r1.width / 2, y: r1.bottom };
@@ -144,7 +143,7 @@
             const p1 = toLocal(from, rect);
             const p2 = toLocal(to, rect);
             const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-            if (el1.id === 'center' || el2.id === 'center') {
+            if (el1.id === 'ppdm' || el2.id === 'ppdm') {
                line.classList.add('arrowLine');
             }
             line.setAttribute('x1', p1.x);
@@ -215,10 +214,11 @@
 
                     const type = response['type'];
                     const elements = document.getElementsByClassName(ecuName.toLowerCase());
+
+                    for (let element of elements) {
+                        element.classList.add('startup');
+                    }
                     if (type === 'status_startup') {
-                        for (let element of elements) {
-                            element.classList.add('startup');
-                        }
                         return;
                     }
                     if (type === 'status_shutdown') {
