@@ -1,5 +1,5 @@
 # Parasoft SOME/IP Demo Application
-The Parasoft SOME/IP Demo Application provides a web-based UI to visualize SOME/IP communication messages between simulated ECUs (AAC, TSR, Radar, Google Map) and a real PPDM ECU.
+The Parasoft SOME/IP Demo Application provides a web-based UI to visualize SOME/IP communication messages between simulated ECUs (ACC, TSR, Radar, Google Map) and a real PPDM ECU.
 
 The real PPDM ECU is sourced from the [parasoft-autosar-demo](https://github.com/parasoft-autosar-demo/autosar_demo) project.
 
@@ -22,19 +22,19 @@ The simulated ECUs are simulated by soavirt-automotive project.
   Provides the speed limit of the current road.
 
 
-- AAC ECU
+- ACC ECU
 
   Requests the PPDM ECU to get the maximum vehicle speed that needs to be controlled.
 
 
 - PPDM ECU
 
-  Upon receiving a request from the AAC ECU, it performs the following operations:
+  Upon receiving a request from the ACC ECU, it performs the following operations:
   - Receives distance and relative speed data published by the Radar ECU.
   - Requests the TSR ECU for the speed limit detected from traffic signs.
   - Requests the Google Map ECU for the current road speed limit.
   - Calculates the maximum vehicle speed to be controlled based on the collected data.
-  - Returns the calculated maximum speed to the AAC ECU.
+  - Returns the calculated maximum speed to the ACC ECU.
 
 ## Requirements
 - Java 17+
