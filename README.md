@@ -52,27 +52,25 @@ The application will:
 - Start an embedded ActiveMQ broker on `tcp://0.0.0.0:61616`.
 - Connect to the SOME/IP Manager WebSocket configured by `manager.websocket.url` (see below).
 
-### Manager WebSocket configuration
+### SOME/IP Manager WebSocket configuration
 
 By default (`src/main/resources/application.properties`):
 
 ```properties
-manager.websocket.url=ws://host.docker.internal:9999/ws
+manager.websocket.url=ws://localhost:9999/ws
 ```
 
-- When the application runs **inside Docker on Windows**, `host.docker.internal` allows the container to reach the SOME/IP Manager running on the host at `ws://localhost:9999/ws`.
-- If you run the application **directly on the host (without Docker)**, and your Manager service listens on `localhost:9999`, you can override this in one of two ways:
-  - Edit `application.properties`:
+You can change it by either of the following approaches:
+  - Edit `application.properties` and rebuild the jar file:
     ```properties
-    manager.websocket.url=ws://localhost:9999/ws
+    manager.websocket.url=ws://<host_name>:<port>/ws
     ```
-  - Or set an environment variable when starting the app:
+    
+  - Set an environment variable when starting the app with jar file:
     ```shell
-    set MANAGER_WEBSOCKET_URL=ws://localhost:9999/ws
+    set MANAGER_WEBSOCKET_URL=ws://<host_name>:<port>/ws
     java -jar target/parasoft-someip-demo-app-***.jar --server.port=9998
     ```
-
-Only the `Running` and `Inactive` ECU status values are propagated to the frontend UI as startup/shutdown events. Other intermediate statuses (such as `Starting`, `Stopping`) are received but ignored.
 
 ## Docker Image
 
@@ -86,7 +84,7 @@ docker build -t parasoft-someip-demo-app:latest .
 docker run -d \
   -p 9998:9998 \
   -p 61616:61616 \
-  -e MANAGER_WEBSOCKET_URL=ws://host.docker.internal:9999/ws \
+  -e MANAGER_WEBSOCKET_URL=ws://localhost:9999/ws \
   --name parasoft-someip-demo-app \
   parasoft-someip-demo-app:latest
 ```
@@ -99,6 +97,6 @@ You can visit the application at [http://localhost:9998](http://localhost:9998).
 | Application Port             | 9998                 | server.port                |
 | Embedded ActiveMQ Server Url | tcp://0.0.0.0:61616  | spring.activemq.broker-url |
 | ActiveMQ Queue Name          | someip_message_queue | N.A.                       |
-| Manager WebSocket URL        | ws://host.docker.internal:9999/ws | manager.websocket.url   |
+| Manager WebSocket URL        | ws://localhost:9999/ws | manager.websocket.url   |
 
 The application embeds an ActiveMQ server to receive SOME/IP messages sent from simulated ECUs, all messages are sent to the **_someip_message_queue_** queue.
