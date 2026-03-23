@@ -1,12 +1,9 @@
 package com.parasoft.demo.soavirt.someip.service;
 
-import at.favre.lib.bytes.Bytes;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.parasoft.demo.soavirt.someip.config.ActiveMQConfig;
-import com.parasoft.demo.soavirt.someip.dto.MessageType;
 import com.parasoft.demo.soavirt.someip.dto.Records;
-import com.parasoft.demo.soavirt.someip.utils.DeserializationUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -28,87 +25,23 @@ public class ActiveMQService {
     public void handleMessage(String message) {
         log.info("Received message: {}", message);
         try {
-            simpMessagingTemplate.convertAndSend("/topic/someip_messages", processMessage(message));
-        } catch (Exception e){
+            String processed = processMessage(message);
+            if (processed != null) {
+                simpMessagingTemplate.convertAndSend("/topic/someip_messages", processed);
+            }
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
     }
 
     public String processMessage(String message) throws JsonProcessingException {
         Records.ActiveMQMessage activeMQMessage = objectMapper.readValue(message, Records.ActiveMQMessage.class);
-        boolean isStatusMessage = activeMQMessage.type().isStatusType();
 
-        return switch (activeMQMessage.ecuName().toUpperCase()) {
-            case "GOOGLEMAP" -> message;
-            case "ACC" -> isStatusMessage ? prepareStatusMessage(activeMQMessage) : deserializeSomeipMessageFromPPDM(activeMQMessage);
-            case "RADAR"-> isStatusMessage ? prepareStatusMessage(activeMQMessage) : deSerializeMessageFromRadar(activeMQMessage);
-            case "TSR" -> isStatusMessage ? prepareStatusMessage(activeMQMessage) : deSerializeMessageFromTSR(activeMQMessage);
-            default -> throw new RuntimeException("Unknown ecu name: " + activeMQMessage.ecuName());
-        };
-    }
-
-    private String prepareStatusMessage(Records.ActiveMQMessage activeMQMessage) throws JsonProcessingException {
-        String ecuName = activeMQMessage.ecuName();
-        MessageType messageType = activeMQMessage.type();
-        return objectMapper.writeValueAsString(new Records.StatusMessage(ecuName, messageType));
-    }
-
-    private String deserializeSomeipMessageFromPPDM(Records.ActiveMQMessage activeMQMessage) throws JsonProcessingException {
-        String ecuName = activeMQMessage.ecuName();
-        MessageType messageType = activeMQMessage.type();
-
-        String payload = DeserializationUtil.normalizeNativeMessage(activeMQMessage.payload());
-        if (payload.length() == 8) {
-            Integer maxSpeed = Bytes.parseHex(payload).toInt();
-            return objectMapper.writeValueAsString(new Records.ACCMessage(ecuName, messageType, maxSpeed, null));
-        } else {
-            int errorCode = Bytes.parseHex(payload.substring(30).substring(0, 8)).toInt();
-            String errorMessage = "Invalid payload: " + payload;
-            if (errorCode == 1) {
-                errorMessage = "All Services (GoogleMap, TSR, Radar) are not available";
-            } else if (errorCode == 2) {
-                errorMessage = "Invalid unit. Use 'kph' or 'mph'";
-            }
-
-            return objectMapper.writeValueAsString(new Records.ACCMessage(ecuName, messageType, null, errorMessage));
-        }
-    }
-
-    private String deSerializeMessageFromRadar(Records.ActiveMQMessage activeMQMessage) throws JsonProcessingException {
-        String ecuName = activeMQMessage.ecuName();
-        MessageType messageType = activeMQMessage.type();
-        int distance;
-        int relativeSpeed;
-
-        String payload = DeserializationUtil.normalizeNativeMessage(activeMQMessage.payload());
-        if (payload.length() != 16) {
-            String errorMessage = "Invalid payload: " + payload;
-            return objectMapper.writeValueAsString(new Records.RadarMessage(ecuName, messageType, null, null, errorMessage));
-        }
-        relativeSpeed = Bytes.parseHex(payload.substring(0, 8)).toInt();
-        distance = Bytes.parseHex(payload.substring(8, 16)).toInt();
-
-        return objectMapper.writeValueAsString(new Records.RadarMessage(ecuName, messageType, distance, relativeSpeed, null));
-    }
-
-    private String deSerializeMessageFromTSR(Records.ActiveMQMessage activeMQMessage) throws JsonProcessingException {
-        String ecuName = activeMQMessage.ecuName();
-        MessageType messageType = activeMQMessage.type();
-
-        String payload = DeserializationUtil.normalizeNativeMessage(activeMQMessage.payload());
-        if (payload.length() == 8) {
-            int speedLimit = Bytes.parseHex(payload).toInt();
-            return objectMapper.writeValueAsString(new Records.TSRMessage(ecuName, messageType, speedLimit, null));
-        } else {
-            int errorCode = Bytes.parseHex(payload.substring(30).substring(0, 8)).toInt();
-            String errorMessage = "Invalid payload: " + payload;
-            if (errorCode == 1) {
-                errorMessage = "Server denied due to permissions or other reasons";
-            } else if (errorCode == 2) {
-                errorMessage = "Too many connections causing the server to be busy";
-            }
-            return objectMapper.writeValueAsString(new Records.TSRMessage(ecuName, messageType, null, errorMessage));
+        if ("GOOGLEMAP".equalsIgnoreCase(activeMQMessage.ecuName())) {
+            return message;
         }
 
+        log.debug("Ignoring non-GoogleMap message from ActiveMQ: {}", activeMQMessage.ecuName());
+        return null;
     }
 }
